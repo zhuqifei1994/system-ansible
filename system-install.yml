@@ -1,0 +1,90 @@
+---
+  - hosts: group               #组的名字
+    remote_user: root           #需要哪个用户去连slave
+    sudo: yes
+    vars:                      
+      # 创建的用户名 
+      user: user           
+      # 用户密码加密方法: openssl passwd -1 "password"
+      password: "password"   
+    tasks:
+    # 创建user用户    
+    - name: Create docker group                
+      group: name=docker system=yes
+    - name: Create /data                              
+      file: path=/data state=directory
+    - name: Add user 
+      user: name={{ user }} password={{ password }} shell=/bin/bash group=docker groups=sudo home=/data/{{ user }} generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
+      tags: user
+   
+    # 下载本地所需软件
+    - name: Install base service                       
+      apt: name={{ item }} state=installed
+      with_items:
+       - curl
+       - vim
+       - ack-grep
+       - git
+       - git-core
+       - httpie
+      tags: install
+
+    # 安装zsh
+    - name: Install zsh                                
+      apt: name=zsh state=installed
+    - name: Fix git bug
+      shell: /usr/bin/git config --global http.sslverify false
+    - name: Installing oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
+      git: repo=https://github.com/robbyrussell/oh-my-zsh.git dest=/data/{{ user }}/.oh-my-zsh
+    - name: Change oh-my-zsh owner, group and mode
+      file: path=/data/{{ user }}/.oh-my-zsh owner={{ user }} group=docker recurse=yes
+    - name: Installing Prose Theme for zsh
+      action: shell curl https://raw.githubusercontent.com/tijptjik/oh-my-zsh/master/themes/prose.zsh-theme > /data/{{ user }}/.oh-my-zsh/themes/prose.zsh-theme
+    - name: Copy the zshrc
+      shell: cp /data/{{ user }}/.oh-my-zsh/templates/zshrc.zsh-template /data/{{ user }}/.zshrc 
+    - name: Change zshrc file
+      shell: sed -i 's/robbyrussell/tjkirch/g' /data/{{ user }}/.zshrc 
+    - name: Change .zshrc owner, group and mode
+      file: path=/data/{{ user }}/.zshrc owner={{ user }} group=docker mode=0644
+    - name: Change the default shell to zsh
+      user: name={{ user }} shell=/bin/zsh
+   
+    
+    # 拷贝用户公钥
+    - name: Copy authorized_keys
+      copy: src=./file/authorized_keys dest=/data/{{ user }}/.ssh/authorized_keys owner={{ user }} group=docker mode=0644
+ 
+    # 禁用ssh服务
+    - name: Stop use ssh                              
+      copy: src=./file/sshd_config dest=/etc/ssh/sshd_config    
+      notify:                                     
+      - restart ssh      
+
+    # 挂载本地系统盘
+    - name: Mount local disk                        
+      mount: src=/dev/vdb1 name=/mnt fstype=ext3 opts=defaults state=mounted
+  
+    # 下载docker
+    - name: Apt-get install docker                   
+      script: ./file/docker.sh
+      tags: install
+
+    # 修改docker启动配置文件
+    - name: Change docker configure file 
+      shell: /bin/echo "DOCKER_OPTS=\" -g /mnt/docker --storage-driver=aufs --dns={{ansible_eth0.ipv4.address}} --dns=8.8.8.8\"" >> /etc/default/docker         
+      notify:                                          
+      - restart docker
+    
+ 
+    # 定时删除docker无用镜像
+    - name: Crontab docker-gc                      
+      cron: name="docker-gc" minute="0" hour="3" weekday="5" job="docker run --rm -e GRACE_PERIOD_SECONDS=3600 -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc spotify/docker-gc"
+  
+    # 触发器配置
+    handlers:                                      
+    - name: restart docker
+      service: name=docker state=restarted
+    - name: restart ssh
+      service: name=ssh state=restarted
+    - name: restart dnsmasq
+      service: name=dnsmasq state=restarted
