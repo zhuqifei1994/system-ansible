@@ -9,10 +9,10 @@
     tags: user
 
   # 下载服务器常用软件
-  - name: Install zsh
+  - name: Install software
     apt: name={{ item }} state=installed
     with_items:
-      - 'software'
+      - '{{ software }}'
     tags: install
 
   # 安装zsh终端
@@ -71,6 +71,13 @@
     shell: /bin/echo "DOCKER_OPTS=\" -g /mnt/docker --storage-driver=aufs --dns={{ansible_eth0.ipv4.address}} --dns=8.8.8.8\"" >> /etc/default/docker
     tags: configuration         
     notify:                                          
+    - restart docker
+
+# 安装docker加速器
+  - name: Install docker accelerator
+    script: docker_accelerator.sh
+    tags: install
+    notify:
     - restart docker
     
  
