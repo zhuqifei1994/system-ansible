@@ -3,7 +3,7 @@
   - name: Create docker group
     group: name=docker system=yes
   - name: Create /data
-    file: pth=/data state=directory
+    file: path=/data state=directory
   - name: Add user
     user: name={{ user }} password={{ password }} shell=/bin/bash group=docker groups=sudo home=/data/{{ user }} generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
     tags: user
