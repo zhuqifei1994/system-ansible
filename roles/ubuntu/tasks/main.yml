@@ -54,12 +54,12 @@
     copy: src=sshd_config dest=/etc/ssh/sshd_config
     tags: configuration    
     notify:                                     
-    - restart ssh      
+    - restart ssh
 
   # 挂载本地系统盘
-  - name: Mount local disk                        
-    mount: src=/dev/vdb1 name=/mnt fstype=ext3 opts=defaults state=mounted
-    tags: configuration
+  # - name: Mount local disk                        
+  #   mount: src=/dev/vdb1 name=/mnt fstype=ext3 opts=defaults state=mounted
+  #   tags: configuration
   
   # 下载docker
   - name: Apt-get install docker                   
