@@ -1,0 +1,7 @@
+---
+software:
+  - curl
+  - vim 
+  - ack-grep
+  - git
+  - httpie
