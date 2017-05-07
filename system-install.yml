@@ -74,9 +74,9 @@
       tags: configuration 
 
     # 挂载本地系统盘
-    - name: Mount local disk                        
-      mount: src=/dev/vdb1 name=/mnt fstype=ext3 opts=defaults state=mounted
-      tags: configuration
+    # - name: Mount local disk                        
+    #   mount: src=/dev/vdb1 name=/mnt fstype=ext3 opts=defaults state=mounted
+    #   tags: configuration
 
     # 下载docker
     - name: Apt-get install docker                   
@@ -90,6 +90,12 @@
       notify:                                          
       - restart docker
     
+    # 安装docker加速器
+    - name: Install docker accelerator
+      script: docker_accelerator.sh
+      tags: install
+      notify:
+      - restart docker
  
     # 定时删除docker无用镜像
     - name: Crontab docker-gc                      
