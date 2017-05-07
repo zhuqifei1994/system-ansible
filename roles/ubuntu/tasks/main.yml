@@ -11,7 +11,7 @@
   # 下载服务器常用软件
   - name: Install zsh
     apt: name={{ item }} state=installed
-    with_item:
+    with_items:
       - 'software'
     tags: install
 
