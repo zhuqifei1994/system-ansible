@@ -19,6 +19,14 @@
       user: name={{ user }} password={{ password }} shell=/bin/bash group=docker groups=sudo home=/data/{{ user }} generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
       tags: configuration
    
+   # 更新源
+    - name: Update and upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+
     # 下载本地所需软件
     - name: Install base service                       
       apt: name={{ item }} state=installed
