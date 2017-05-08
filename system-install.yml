@@ -19,14 +19,21 @@
       user: name={{ user }} password={{ password }} shell=/bin/bash group=docker groups=sudo home=/data/{{ user }} generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
       tags: configuration
    
-   # 更新源
+    # 更新 apt 源
     - name: Update and upgrade apt packages
-      become: true
       apt:
         update_cache: yes
         cache_valid_time: 86400
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 
-    # 下载本地所需软件
+    # 更新 yum 源
+    - name: Update and upgrade yum packages
+      yum:
+        update_cache: yes
+        cache_valid_time: 86400
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+    # 下载本地所需软件(Centos or Ubuntu)
     - name: Install base service                       
       apt: name={{ item }} state=installed
       with_items:
@@ -37,11 +44,31 @@
        - git-core
        - httpie
       tags: install
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    # 下载本地所需软件(Centos or Ubuntu)
+    - name: Install base service                       
+      yum: name={{ item }} state=installed
+      with_items:
+       - curl
+       - vim
+       - ack-grep
+       - git
+       - git-core
+       - httpie
+      tags: install
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    
 
     # 安装zsh
     - name: Install zsh                                
       apt: name=zsh state=installed
       tags: install
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+    - name: Install zsh(Centos or Redhat)
+      yum: name=zsh state=installed
+      tags: install
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
     - name: Fix git bug
       shell: /usr/bin/git config --global http.sslverify false
       tags: install
