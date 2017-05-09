@@ -126,7 +126,7 @@
     
     # 安装docker加速器
     - name: Install docker accelerator
-      script: docker_accelerator.sh
+      script: ./file/docker_accelerator.sh
       tags: install
       notify:
       - restart docker
